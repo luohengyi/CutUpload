@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<input type="file" />
+<input id="ok" type="button" value="ok">
+
+</body>
+<script src="./jquery-1.11.1.js"></script>
+<script>
+
+    $(function () {
+        //单个文件长度 ,我php.ini中文件不等到达1m所以减1
+        const LENGTH = 1024*1024-300;
+        //当次切割起始位置
+        var start = 0;
+        //当次切割结束位置
+        var end = start + LENGTH;
+        //切割后的文件
+        var blob;
+        //上传的第几块文件
+        var blob_num = 1;
+
+
+
+        //本次文件总块数
+        var total_blob_num = 0;
+
+        $('#ok').click(function () {
+            //获取input中的文件
+            var fileElement = $("input[type=file]").prop('files')[0];
+
+            //计算总次数
+            total_blob_num = Math.ceil(fileElement.size / LENGTH);
+
+
+            for (var i = 0; i <total_blob_num; i++) {
+                //切割文件
+                var cutFileData = cutFile(fileElement);
+                console.log(start)
+                //上传文件
+                sendFile(cutFileData,fileElement);
+            }
+
+
+        })
+
+        //切割文件
+        function cutFile(file) {
+            //切割文件
+            var file_blob = file.slice(start, end);
+            //初始化下一次切割文件的起始和结束位置
+            start = end;
+            end = start + LENGTH;
+
+            //返回切割文件
+            return file_blob;
+        }
+
+
+        //发送文件
+        function sendFile(blob,file) {
+            //数据搭载对象
+            var formData = new FormData();
+            var total_blob_num = Math.ceil(file.size / LENGTH);
+
+            formData.append('file', blob);
+            formData.append('blob_num', blob_num++);
+            formData.append('total_blob_num', total_blob_num);
+            formData.append('file_name', file.name);
+
+            $.ajax({
+                url:"/Upload.php",
+                type:'post',
+                processData:false,
+                contentType:false,
+                data:formData,
+                success:function(data){
+                    console.log(data)
+                }
+            })
+        }
+
+
+    })
+    
+
+
+
+</script>
+</html>
